@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome</title>
+    <title>Welcome Page</title>
     <style>
         @font-face {
             font-family: 'Product Sans';
@@ -21,8 +21,8 @@
             text-align: center;
         }
 
-        .welcome-message {
-            font-size: 24px;
+        h1 {
+            font-size: 36px;
             margin-bottom: 20px;
         }
 
@@ -48,9 +48,7 @@
     </style>
 </head>
 <body>
-    <div class="welcome-message">
-        Welcome, <span class="username" id="username"></span>!
-    </div>
+    <h1>Welcome, <span class="username" id="username"></span>!</h1>
     <button class="logout-btn" onclick="logout()">Logout</button>
 
     <script>
@@ -66,3 +64,4 @@
     </script>
 </body>
 </html>
+
