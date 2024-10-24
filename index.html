@@ -198,7 +198,7 @@
                 <input type="password" id="newPassword" placeholder="New Password">
             </div>
             <div class="form-group">
-                <input type="checkbox" id="adminCheckbox"> Make user admin
+                <input type="checkbox" id="makeAdminCheckbox"> Make user admin
             </div>
             <div class="error" id="createError"></div>
             <button class="secondary-btn" onclick="createUser()">Create New User</button>
@@ -263,12 +263,20 @@
             // Check regular users
             const users = JSON.parse(localStorage.getItem('users'));
             const user = users.find(u => u.username === username && u.password === password);
-            
+
             if (user) {
-                if (user.deletedBy) {
-                    errorElement.textContent = `Account has been deleted by ${user.deletedBy}`;
+                if (user.deletedByAdmin) {
+                    errorElement.textContent = `Account has been deleted by ${user.deletedByAdmin}`;
+                    return;
+                }
+                
+                // Store logged-in user
+                localStorage.setItem('currentUser', username);
+                
+                // Check if the user is an admin
+                if (user.isAdmin) {
+                    showAdminPanel();
                 } else {
-                    localStorage.setItem('currentUser', username);
                     showWelcomeScreen(username);
                 }
             } else {
@@ -278,74 +286,4 @@
 
         function createUser() {
             const username = document.getElementById('newUsername').value;
-            const password = document.getElementById('newPassword').value;
-            const isAdmin = document.getElementById('adminCheckbox').checked;
-            const errorElement = document.getElementById('createError');
-
-            if (!username || !password) {
-                errorElement.textContent = 'Please fill in all fields';
-                return;
-            }
-
-            const users = JSON.parse(localStorage.getItem('users'));
-
-            if (users.find(u => u.username === username)) {
-                errorElement.textContent = 'Username already exists';
-                return;
-            }
-
-            users.push({ username, password, isAdmin });
-            localStorage.setItem('users', JSON.stringify(users));
-
-            // Refresh user list
-            loadUserList();
-        }
-
-        function loadUserList() {
-            const users = JSON.parse(localStorage.getItem('users'));
-            const userListElement = document.getElementById('userList');
-            userListElement.innerHTML = '<h3>Existing Users:</h3>';
-
-            users.forEach(user => {
-                const userItem = document.createElement('div');
-                userItem.classList.add('user-item');
-                userItem.innerHTML = `
-                    <p>${user.username} ${user.isAdmin ? '(Admin)' : ''}</p>
-                    <button onclick="deleteUser('${user.username}')">Delete</button>
-                `;
-                userListElement.appendChild(userItem);
-            });
-        }
-
-        function deleteUser(username) {
-            const users = JSON.parse(localStorage.getItem('users'));
-            const user = users.find(u => u.username === username);
-
-            if (user) {
-                user.deletedBy = 'admin';
-                localStorage.setItem('users', JSON.stringify(users));
-                loadUserList();
-            }
-        }
-
-        function showAdminPanel() {
-            document.getElementById('loginForm').style.display = 'none';
-            document.getElementById('welcomeScreen').style.display = 'none';
-            document.getElementById('adminPanel').style.display = 'block';
-            loadUserList();
-        }
-
-        function showWelcomeScreen(username) {
-            document.getElementById('loginForm').style.display = 'none';
-            document.getElementById('welcomeScreen').style.display = 'block';
-            document.getElementById('adminPanel').style.display = 'none';
-            document.getElementById('welcomeMessage').textContent = `Welcome, ${username}`;
-        }
-
-        function logout() {
-            localStorage.removeItem('currentUser');
-            window.location.reload();
-        }
-    </script>
-</body>
-</html>
+            const password = document.getElementById
