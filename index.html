@@ -102,23 +102,71 @@
             opacity: 1;
         }
 
-        #adminPanel {
-            display: none;
+        #welcomeScreen, #adminPanel {
             text-align: center;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+        }
+
+        #welcomeScreen.visible, #adminPanel.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .welcome-content {
+            margin: 24px 0;
+        }
+
+        #welcomeMessage {
+            font-size: 18px;
+            color: #202124;
+            margin-bottom: 8px;
         }
 
         .logout-btn {
             background-color: #ea4335;
             margin-top: 16px;
-            color: white;
         }
 
         .logout-btn:hover {
             background-color: #d33828;
         }
 
+        .secondary-btn {
+            background-color: #34a853;
+            margin-top: 8px;
+        }
+
+        .secondary-btn:hover {
+            background-color: #2d8e47;
+        }
+
         input::placeholder {
             color: #5f6368;
+        }
+
+        #loginForm, #createUserForm {
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        #loginForm.active, #createUserForm.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .user-list {
+            margin-top: 16px;
+            text-align: left;
+        }
+
+        .user-item {
+            padding: 8px;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            margin-bottom: 8px;
         }
     </style>
 </head>
@@ -128,56 +176,181 @@
         <div id="loginForm" class="active">
             <h2>Login</h2>
             <div class="form-group">
-                <input type="text" id="username" placeholder="Username" required>
+                <input type="text" id="loginUsername" placeholder="Username">
             </div>
             <div class="form-group">
-                <input type="password" id="password" placeholder="Password" required>
+                <input type="password" id="loginPassword" placeholder="Password">
             </div>
-            <button id="loginButton">Login</button>
-            <div class="error" id="errorMessage"></div>
+            <div class="error" id="loginError"></div>
+            <button onclick="login()">Login</button>
         </div>
 
         <!-- Admin Panel -->
-        <div id="adminPanel">
-            <h2>Welcome, <span id="welcomeUsername" style="color: blue;"></span></h2>
-            <button class="logout-btn" id="logoutButton">Logout</button>
+        <div id="adminPanel" style="display: none;">
+            <h2>Admin Panel</h2>
+            <div class="welcome-content">
+                <p id="adminWelcome">Welcome, Admin!</p>
+            </div>
+            <div class="form-group">
+                <input type="text" id="newUsername" placeholder="New Username">
+            </div>
+            <div class="form-group">
+                <input type="password" id="newPassword" placeholder="New Password">
+            </div>
+            <div class="error" id="createError"></div>
+            <button class="secondary-btn" onclick="createUser()">Create New User</button>
+            <div class="user-list" id="userList">
+                <h3>Existing Users:</h3>
+                <!-- User list will be populated here -->
+            </div>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+
+        <!-- User Welcome Screen -->
+        <div id="welcomeScreen" style="display: none;">
+            <h2>Welcome</h2>
+            <div class="welcome-content">
+                <p id="welcomeMessage"></p>
+                <p style="color: #5f6368;">You are now logged in</p>
+            </div>
+            <button class="logout-btn" onclick="logout()">Logout</button>
         </div>
     </div>
 
     <script>
-        // Simulated database of users
-        const users = {
-            admin: 'admin',
-            user1: 'password1',
-            user2: 'password2'
-        };
+        document.addEventListener('DOMContentLoaded', () => {
+            // Create admin account if it doesn't exist
+            if (!localStorage.getItem('admin')) {
+                const adminUser = {
+                    username: 'admin',
+                    password: 'admin'
+                };
+                localStorage.setItem('admin', JSON.stringify(adminUser));
+            }
 
-        // Login functionality
-        document.getElementById('loginButton').addEventListener('click', function() {
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            const errorMessage = document.getElementById('errorMessage');
+            // Initialize users array if it doesn't exist
+            if (!localStorage.getItem('users')) {
+                localStorage.setItem('users', JSON.stringify([]));
+            }
 
-            if (users[username] && users[username] === password) {
-                // Successful login
-                document.getElementById('loginForm').style.display = 'none';
-                document.getElementById('adminPanel').style.display = 'block';
-                document.getElementById('welcomeUsername').innerText = username;
-                errorMessage.innerText = ''; // Clear error message
-            } else {
-                // Show error message
-                errorMessage.innerText = 'Invalid username or password.';
+            // Check for logged in user
+            const loggedInUser = localStorage.getItem('currentUser');
+            if (loggedInUser) {
+                if (loggedInUser === 'admin') {
+                    showAdminPanel();
+                } else {
+                    showWelcomeScreen(loggedInUser);
+                }
             }
         });
 
-        // Logout functionality
-        document.getElementById('logoutButton').addEventListener('click', function() {
-            document.getElementById('adminPanel').style.display = 'none';
+        function login() {
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+            const errorElement = document.getElementById('loginError');
+
+            // Check if admin
+            const admin = JSON.parse(localStorage.getItem('admin'));
+            if (username === admin.username && password === admin.password) {
+                localStorage.setItem('currentUser', 'admin');
+                showAdminPanel();
+                return;
+            }
+
+            // Check regular users
+            const users = JSON.parse(localStorage.getItem('users'));
+            const user = users.find(u => u.username === username && u.password === password);
+            
+            if (user) {
+                localStorage.setItem('currentUser', username);
+                showWelcomeScreen(username);
+            } else {
+                errorElement.textContent = 'Invalid username or password';
+            }
+        }
+
+        function createUser() {
+            const username = document.getElementById('newUsername').value;
+            const password = document.getElementById('newPassword').value;
+            const errorElement = document.getElementById('createError');
+
+            if (!username || !password) {
+                errorElement.textContent = 'Please fill in all fields';
+                return;
+            }
+
+            const users = JSON.parse(localStorage.getItem('users'));
+            if (users.some(u => u.username === username)) {
+                errorElement.textContent = 'Username already exists';
+                return;
+            }
+
+            users.push({ username, password });
+            localStorage.setItem('users', JSON.stringify(users));
+
+            // Create the format for saving in localStorage as "username:password"
+            const formattedUsers = users.map(u => `${u.username}:${u.password}`).join('\n');
+            localStorage.setItem('formattedUsers', formattedUsers);
+            
+            // Clear form and error
+            document.getElementById('newUsername').value = '';
+            document.getElementById('newPassword').value = '';
+            errorElement.textContent = '';
+
+            // Refresh user list
+            updateUserList();
+        }
+
+        function updateUserList() {
+            const userList = document.getElementById('userList');
+            const users = JSON.parse(localStorage.getItem('users'));
+
+            let userListHTML = '<h3>Existing Users:</h3>';
+            users.forEach(user => {
+                userListHTML += `
+                    <div class="user-item">
+                        ${user.username}: ${user.password}
+                        <button onclick="deleteUser('${user.username}')"
+                                style="width: auto; float: right; padding: 4px 8px; background-color: #ea4335;">
+                            Delete
+                        </button>
+                    </div>`;
+            });
+            userList.innerHTML = userListHTML;
+        }
+
+        function deleteUser(username) {
+            const users = JSON.parse(localStorage.getItem('users'));
+            const updatedUsers = users.filter(u => u.username !== username);
+            localStorage.setItem('users', JSON.stringify(updatedUsers));
+            updateUserList();
+        }
+
+        function showAdminPanel() {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('adminPanel').style.display = 'block';
+            document.getElementById('adminPanel').classList.add('visible');
+            updateUserList();
+        }
+
+        function showWelcomeScreen(username) {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('welcomeScreen').style.display = 'block';
+            document.getElementById('welcomeMessage').textContent = `Welcome, ${username}!`;
+            document.getElementById('welcomeScreen').classList.add('visible');
+        }
+
+        function logout() {
+            localStorage.removeItem('currentUser');
             document.getElementById('loginForm').style.display = 'block';
-            document.getElementById('username').value = '';
-            document.getElementById('password').value = '';
-            document.getElementById('errorMessage').innerText = ''; // Clear error message
-        });
+            document.getElementById('adminPanel').style.display = 'none';
+            document.getElementById('welcomeScreen').style.display = 'none';
+            document.getElementById('loginUsername').value = '';
+            document.getElementById('loginPassword').value = '';
+            document.getElementById('createError').textContent = '';
+            document.getElementById('loginError').textContent = '';
+        }
     </script>
 </body>
 </html>
+
