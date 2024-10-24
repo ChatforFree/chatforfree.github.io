@@ -3,65 +3,237 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome Page</title>
+    <title>Admin Login System</title>
     <style>
         @font-face {
             font-family: 'Product Sans';
             src: url('https://fonts.gstatic.com/s/productsans/v19/pxiDypQkot1TnFhsFMOfGShVE9eOcEg.woff2') format('woff2');
         }
 
-        body {
+        * {
             font-family: 'Product Sans', Arial, sans-serif;
+        }
+
+        body {
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
+            margin: 0;
             background-color: #f0f2f5;
             color: #202124;
+        }
+
+        .container {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            width: 320px;
+        }
+
+        h2 {
+            font-weight: 500;
+            color: #202124;
+            margin: 0 0 24px 0;
             text-align: center;
+            font-size: 24px;
         }
 
-        h1 {
-            font-size: 36px;
-            margin-bottom: 20px;
+        .form-group {
+            margin-bottom: 16px;
         }
 
-        .username {
-            color: blue; /* Set username color to blue */
-            font-weight: bold;
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 6px 0;
+            border: 1px solid #dadce0;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 16px;
+            transition: all 0.2s ease;
         }
 
-        .logout-btn {
-            padding: 12px 20px;
-            background-color: red; /* Set button color to red */
+        input:focus {
+            outline: none;
+            border-color: #1a73e8;
+            box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #1a73e8;
             color: white;
             border: none;
             border-radius: 8px;
             cursor: pointer;
             font-size: 16px;
             font-weight: 500;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        button:hover {
+            background-color: #1557b0;
+        }
+
+        .error {
+            color: #d93025;
+            font-size: 14px;
+            margin-top: 8px;
+            display: none;
+        }
+
+        #adminPanel, #welcomeScreen {
+            display: none;
+            text-align: center;
+        }
+
+        .logout-btn {
+            background-color: #ea4335;
+            margin-top: 16px;
+            border: none;
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
         }
 
         .logout-btn:hover {
-            background-color: darkred; /* Darker red on hover */
+            background-color: #d33828;
         }
     </style>
 </head>
 <body>
-    <h1>Welcome, <span class="username" id="username"></span>!</h1>
-    <button class="logout-btn" onclick="logout()">Logout</button>
+    <div class="container">
+        <!-- Login Form -->
+        <div id="loginForm">
+            <h2>Login</h2>
+            <div class="form-group">
+                <input type="text" id="loginUsername" placeholder="Username" required>
+            </div>
+            <div class="form-group">
+                <input type="password" id="loginPassword" placeholder="Password" required>
+            </div>
+            <div class="error" id="loginError">Invalid username or password</div>
+            <button onclick="login()">Login</button>
+        </div>
+
+        <!-- Admin Panel -->
+        <div id="adminPanel">
+            <h2>Admin Panel</h2>
+            <div class="welcome-content">
+                <p id="adminWelcome">Welcome, Admin!</p>
+            </div>
+            <div class="form-group">
+                <input type="text" id="newUsername" placeholder="New Username">
+            </div>
+            <div class="form-group">
+                <input type="password" id="newPassword" placeholder="New Password">
+            </div>
+            <div class="error" id="createError"></div>
+            <button onclick="createUser()">Create New User</button>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+
+        <!-- User Welcome Screen -->
+        <div id="welcomeScreen">
+            <h2>Welcome</h2>
+            <div class="welcome-content">
+                <p id="welcomeMessage"></p>
+            </div>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+    </div>
 
     <script>
-        // Simulate retrieving the username (replace this with actual logic)
-        const username = 'JohnDoe'; // Replace with actual username logic
-        document.getElementById('username').textContent = username;
+        async function login() {
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+            const errorElement = document.getElementById('loginError');
+
+            try {
+                const response = await fetch('users.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ action: 'login', username, password })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    if (data.isAdmin) {
+                        showAdminPanel();
+                    } else {
+                        showWelcomeScreen(username);
+                    }
+                } else {
+                    errorElement.style.display = 'block';
+                }
+            } catch (error) {
+                errorElement.textContent = 'An error occurred during login';
+                errorElement.style.display = 'block';
+            }
+        }
+
+        function showAdminPanel() {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('adminPanel').style.display = 'block';
+            document.getElementById('adminWelcome').innerText = `Welcome, Admin!`;
+        }
+
+        function showWelcomeScreen(username) {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('welcomeScreen').style.display = 'block';
+            document.getElementById('welcomeMessage').innerText = `Welcome, ${username}!`;
+        }
 
         function logout() {
-            // Your logout logic here
-            alert('Logged out successfully!');
-            // Optionally redirect to login page or clear user session
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('adminPanel').style.display = 'none';
+            document.getElementById('welcomeScreen').style.display = 'none';
+            document.getElementById('loginUsername').value = '';
+            document.getElementById('loginPassword').value = '';
+            document.getElementById('loginError').style.display = 'none';
+        }
+
+        async function createUser() {
+            const username = document.getElementById('newUsername').value;
+            const password = document.getElementById('newPassword').value;
+            const errorElement = document.getElementById('createError');
+
+            if (!username || !password) {
+                errorElement.textContent = 'Please fill in all fields';
+                errorElement.style.display = 'block';
+                return;
+            }
+
+            try {
+                const response = await fetch('users.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ action: 'createUser', username, password })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    document.getElementById('newUsername').value = '';
+                    document.getElementById('newPassword').value = '';
+                    errorElement.style.display = 'none';
+                    alert('User created successfully');
+                } else {
+                    errorElement.textContent = data.message || 'Error creating user';
+                    errorElement.style.display = 'block';
+                }
+            } catch (error) {
+                errorElement.textContent = 'An error occurred while creating user';
+                errorElement.style.display = 'block';
+            }
         }
     </script>
 </body>
 </html>
-
