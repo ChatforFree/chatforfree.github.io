@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Login System</title>
     <style>
+        /* Same styles as before */
         @font-face {
             font-family: 'Product Sans';
             src: url('https://fonts.gstatic.com/s/productsans/v19/pxiDypQkot1TnFhsFMOfGShVE9eOcEg.woff2') format('woff2');
@@ -233,6 +234,11 @@
                 localStorage.setItem('users', JSON.stringify([]));
             }
 
+            // Initialize deleted users array if it doesn't exist
+            if (!localStorage.getItem('deletedUsers')) {
+                localStorage.setItem('deletedUsers', JSON.stringify([]));
+            }
+
             // Check for logged in user
             const loggedInUser = localStorage.getItem('currentUser');
             if (loggedInUser) {
@@ -249,6 +255,14 @@
             const password = document.getElementById('loginPassword').value;
             const errorElement = document.getElementById('loginError');
 
+            // Check if account has been deleted
+            const deletedUsers = JSON.parse(localStorage.getItem('deletedUsers'));
+            const deletedUser = deletedUsers.find(u => u.username === username);
+            if (deletedUser) {
+                errorElement.textContent = `Account has been deleted by ${deletedUser.deletedBy}`;
+                return;
+            }
+
             // Check if admin
             const admin = JSON.parse(localStorage.getItem('admin'));
             if (username === admin.username && password === admin.password) {
@@ -260,12 +274,12 @@
             // Check regular users
             const users = JSON.parse(localStorage.getItem('users'));
             const user = users.find(u => u.username === username && u.password === password);
-            
-            if (user) {
+
+            if (!user) {
+                errorElement.textContent = 'Invalid username or password';
+            } else {
                 localStorage.setItem('currentUser', username);
                 showWelcomeScreen(username);
-            } else {
-                errorElement.textContent = 'Invalid username or password';
             }
         }
 
@@ -273,13 +287,13 @@
             const username = document.getElementById('newUsername').value;
             const password = document.getElementById('newPassword').value;
             const errorElement = document.getElementById('createError');
+            const users = JSON.parse(localStorage.getItem('users'));
 
-            if (!username || !password) {
-                errorElement.textContent = 'Please fill in all fields';
+            if (username === '' || password === '') {
+                errorElement.textContent = 'Username and password are required';
                 return;
             }
 
-            const users = JSON.parse(localStorage.getItem('users'));
             if (users.some(u => u.username === username)) {
                 errorElement.textContent = 'Username already exists';
                 return;
@@ -320,6 +334,13 @@
             const users = JSON.parse(localStorage.getItem('users'));
             const updatedUsers = users.filter(u => u.username !== username);
             localStorage.setItem('users', JSON.stringify(updatedUsers));
+
+            // Add to deleted users
+            const admin = JSON.parse(localStorage.getItem('admin'));
+            const deletedUsers = JSON.parse(localStorage.getItem('deletedUsers'));
+            deletedUsers.push({ username, deletedBy: admin.username });
+            localStorage.setItem('deletedUsers', JSON.stringify(deletedUsers));
+
             updateUserList();
         }
 
@@ -350,5 +371,3 @@
     </script>
 </body>
 </html>
-
-
