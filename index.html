@@ -72,89 +72,27 @@
             font-size: 16px;
             font-weight: 500;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            overflow: hidden;
-            transform: scale(1);
         }
 
         button:hover {
             background-color: #1557b0;
-            transform: scale(1.02);
-            box-shadow: 0 2px 8px rgba(26, 115, 232, 0.3);
-        }
-
-        button:active {
-            transform: scale(0.98);
-            box-shadow: 0 1px 4px rgba(26, 115, 232, 0.2);
         }
 
         .error {
             color: #d93025;
             font-size: 14px;
             margin-top: 8px;
-            transform: translateY(-4px);
             opacity: 0;
             transition: all 0.3s ease;
         }
 
         .error:not(:empty) {
-            transform: translateY(0);
             opacity: 1;
         }
 
-        #welcomeScreen, #adminPanel {
+        #adminPanel {
+            display: none;
             text-align: center;
-            opacity: 0;
-            transform: translateY(10px);
-            transition: all 0.3s ease;
-        }
-
-        #welcomeScreen.visible, #adminPanel.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .welcome-content {
-            margin: 24px 0;
-        }
-
-        #welcomeMessage {
-            font-size: 18px;
-            color: #202124;
-            margin-bottom: 8px;
-        }
-
-        .logout-btn {
-            background-color: #ea4335;
-            margin-top: 16px;
-        }
-
-        .logout-btn:hover {
-            background-color: #d33828;
-        }
-
-        .secondary-btn {
-            background-color: #34a853;
-            margin-top: 8px;
-        }
-
-        .secondary-btn:hover {
-            background-color: #2d8e47;
-        }
-
-        input::placeholder {
-            color: #5f6368;
-        }
-
-        #loginForm, #createUserForm {
-            transition: opacity 0.3s ease, transform 0.3s ease;
-            opacity: 0;
-            transform: translateY(10px);
-        }
-
-        #loginForm.active, #createUserForm.active {
-            opacity: 1;
-            transform: translateY(0);
         }
 
         .user-list {
@@ -186,11 +124,8 @@
         </div>
 
         <!-- Admin Panel -->
-        <div id="adminPanel" style="display: none;">
+        <div id="adminPanel">
             <h2>Admin Panel</h2>
-            <div class="welcome-content">
-                <p id="adminWelcome">Welcome, Admin!</p>
-            </div>
             <div class="form-group">
                 <input type="text" id="newUsername" placeholder="New Username">
             </div>
@@ -198,60 +133,46 @@
                 <input type="password" id="newPassword" placeholder="New Password">
             </div>
             <div class="error" id="createError"></div>
-            <button class="secondary-btn" onclick="createUser()">Create New User</button>
+            <button onclick="createUser()">Create New User</button>
             <div class="user-list" id="userList">
                 <h3>Existing Users:</h3>
                 <!-- User list will be populated here -->
             </div>
-            <button class="logout-btn" onclick="logout()">Logout</button>
-        </div>
-
-        <!-- User Welcome Screen -->
-        <div id="welcomeScreen" style="display: none;">
-            <h2>Welcome</h2>
-            <div class="welcome-content">
-                <p id="welcomeMessage"></p>
-                <p style="color: #5f6368;">You are now logged in</p>
-            </div>
-            <button class="logout-btn" onclick="logout()">Logout</button>
+            <button onclick="logout()">Logout</button>
         </div>
     </div>
 
     <script>
-        async function login() {
+        function getUsers() {
+            return JSON.parse(localStorage.getItem('users')) || [];
+        }
+
+        function saveUsers(users) {
+            localStorage.setItem('users', JSON.stringify(users));
+        }
+
+        function login() {
             const username = document.getElementById('loginUsername').value;
             const password = document.getElementById('loginPassword').value;
             const errorElement = document.getElementById('loginError');
 
-            try {
-                const response = await fetch('users.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        action: 'login',
-                        username,
-                        password
-                    })
-                });
+            const users = getUsers();
+            const adminUsername = 'admin';
+            const adminPassword = 'admin';
 
-                const data = await response.json();
-                if (data.success) {
-                    if (data.isAdmin) {
-                        showAdminPanel();
-                    } else {
-                        showWelcomeScreen(username);
-                    }
+            if (username === adminUsername && password === adminPassword) {
+                showAdminPanel();
+            } else {
+                const user = users.find(user => user.username === username && user.password === password);
+                if (user) {
+                    alert(`Welcome, ${username}!`);
                 } else {
                     errorElement.textContent = 'Invalid username or password';
                 }
-            } catch (error) {
-                errorElement.textContent = 'An error occurred during login';
             }
         }
 
-        async function createUser() {
+        function createUser() {
             const username = document.getElementById('newUsername').value;
             const password = document.getElementById('newPassword').value;
             const errorElement = document.getElementById('createError');
@@ -261,151 +182,58 @@
                 return;
             }
 
-            try {
-                const response = await fetch('users.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        action: 'createUser',
-                        username,
-                        password
-                    })
-                });
-
-                const data = await response.json();
-                if (data.success) {
-                    document.getElementById('newUsername').value = '';
-                    document.getElementById('newPassword').value = '';
-                    errorElement.textContent = '';
-                    updateUserList();
-                } else {
-                    errorElement.textContent = data.message || 'Error creating user';
-                }
-            } catch (error) {
-                errorElement.textContent = 'An error occurred while creating user';
+            const users = getUsers();
+            if (users.find(user => user.username === username)) {
+                errorElement.textContent = 'Username already exists';
+                return;
             }
+
+            users.push({ username, password });
+            saveUsers(users);
+            document.getElementById('newUsername').value = '';
+            document.getElementById('newPassword').value = '';
+            errorElement.textContent = '';
+            updateUserList();
         }
 
-        async function updateUserList() {
-            try {
-                const response = await fetch('users.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        action: 'getUsers'
-                    })
-                });
-
-                const data = await response.json();
-                if (data.success) {
-                    const userList = document.getElementById('userList');
-                    let userListHTML = '<h3>Existing Users:</h3>';
-                    data.users.forEach(username => {
-                        userListHTML += `
-                            <div class="user-item">
-                                ${username}
-                                <button onclick="deleteUser('${username}')" 
-                                        style="width: auto; float: right; padding: 4px 8px; background-color: #ea4335;">
-                                    Delete
-                                </button>
-                            </div>`;
-                    });
-                    userList.innerHTML = userListHTML;
-                }
-            } catch (error) {
-                console.error('Error updating user list:', error);
-            }
+        function updateUserList() {
+            const users = getUsers();
+            const userList = document.getElementById('userList');
+            let userListHTML = '<h3>Existing Users:</h3>';
+            users.forEach(user => {
+                userListHTML += `
+                    <div class="user-item">
+                        ${user.username}
+                        <button onclick="deleteUser('${user.username}')" 
+                                style="width: auto; float: right; padding: 4px 8px; background-color: #ea4335;">
+                            Delete
+                        </button>
+                    </div>`;
+            });
+            userList.innerHTML = userListHTML;
         }
 
-        async function deleteUser(username) {
-            try {
-                const response = await fetch('users.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        action: 'deleteUser',
-                        username
-                    })
-                });
-
-                const data = await response.json();
-                if (data.success) {
-                    updateUserList();
-                }
-            } catch (error) {
-                console.error('Error deleting user:', error);
-            }
+        function deleteUser(username) {
+            let users = getUsers();
+            users = users.filter(user => user.username !== username);
+            saveUsers(users);
+            updateUserList();
         }
 
-        async function logout() {
-            try {
-                await fetch('users.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        action: 'logout'
-                    })
-                });
-            } catch (error) {
-                console.error('Error during logout:', error);
-            }
-
-            const adminPanel = document.getElementById('adminPanel');
-            const welcomeScreen = document.getElementById('welcomeScreen');
-            
-            adminPanel.classList.remove('visible');
-            welcomeScreen.classList.remove('visible');
-
-            setTimeout(() => {
-                adminPanel.style.display = 'none';
-                welcomeScreen.style.display = 'none';
-                
-                // Clear all input fields
-                document.getElementById('loginUsername').value = '';
-                document.getElementById('loginPassword').value = '';
-                document.getElementById('newUsername').value = '';
-                document.getElementById('newPassword').value = '';
-                
-                // Show login form
-                const loginForm = document.getElementById('loginForm');
-                loginForm.style.display = 'block';
-                setTimeout(() => loginForm.classList.add('active'), 50);
-            }, 300);
+        function logout() {
+            document.getElementById('adminPanel').style.display = 'none';
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('loginUsername').value = '';
+            document.getElementById('loginPassword').value = '';
         }
 
         function showAdminPanel() {
-            const loginForm = document.getElementById('loginForm');
+            document.getElementById('loginForm').style.display = 'none';
             const adminPanel = document.getElementById('adminPanel');
-            
-            loginForm.classList.remove('active');
-            setTimeout(() => {
-                loginForm.style.display = 'none';
-                adminPanel.style.display = 'block';
-                setTimeout(() => adminPanel.classList.add('visible'), 50);
-                updateUserList();
-            }, 300);
-        }
-
-        function showWelcomeScreen(username) {
-            const loginForm = document.getElementById('loginForm');
-            const welcomeScreen = document.getElementById('welcomeScreen');
-
-            loginForm.classList.remove('active');
-            setTimeout(() => {
-                loginForm.style.display = 'none';
-                welcomeScreen.style.display = 'block';
-                document.getElementById('welcomeMessage').textContent = `Hello, ${username}!`;
-                setTimeout(() => welcomeScreen.classList.add('visible'), 50);
-            }, 300);
+            adminPanel.style.display = 'block';
+            updateUserList();
         }
     </script>
 </body>
 </html>
+
