@@ -72,20 +72,37 @@
             font-size: 16px;
             font-weight: 500;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            transform: scale(1);
         }
 
         button:hover {
             background-color: #1557b0;
+            transform: scale(1.02);
+            box-shadow: 0 2px 8px rgba(26, 115, 232, 0.3);
+        }
+
+        button:active {
+            transform: scale(0.98);
+            box-shadow: 0 1px 4px rgba(26, 115, 232, 0.2);
         }
 
         .error {
             color: #d93025;
             font-size: 14px;
             margin-top: 8px;
-            display: none;
+            transform: translateY(-4px);
+            opacity: 0;
+            transition: all 0.3s ease;
         }
 
-        #adminPanel, #welcomeScreen {
+        .error:not(:empty) {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        #adminPanel {
             display: none;
             text-align: center;
         }
@@ -93,147 +110,74 @@
         .logout-btn {
             background-color: #ea4335;
             margin-top: 16px;
-            border: none;
             color: white;
-            padding: 12px;
-            border-radius: 8px;
-            cursor: pointer;
         }
 
         .logout-btn:hover {
             background-color: #d33828;
+        }
+
+        input::placeholder {
+            color: #5f6368;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <!-- Login Form -->
-        <div id="loginForm">
+        <div id="loginForm" class="active">
             <h2>Login</h2>
             <div class="form-group">
-                <input type="text" id="loginUsername" placeholder="Username" required>
+                <input type="text" id="username" placeholder="Username" required>
             </div>
             <div class="form-group">
-                <input type="password" id="loginPassword" placeholder="Password" required>
+                <input type="password" id="password" placeholder="Password" required>
             </div>
-            <div class="error" id="loginError">Invalid username or password</div>
-            <button onclick="login()">Login</button>
+            <button id="loginButton">Login</button>
+            <div class="error" id="errorMessage"></div>
         </div>
 
         <!-- Admin Panel -->
         <div id="adminPanel">
-            <h2>Admin Panel</h2>
-            <div class="welcome-content">
-                <p id="adminWelcome">Welcome, Admin!</p>
-            </div>
-            <div class="form-group">
-                <input type="text" id="newUsername" placeholder="New Username">
-            </div>
-            <div class="form-group">
-                <input type="password" id="newPassword" placeholder="New Password">
-            </div>
-            <div class="error" id="createError"></div>
-            <button onclick="createUser()">Create New User</button>
-            <button class="logout-btn" onclick="logout()">Logout</button>
-        </div>
-
-        <!-- User Welcome Screen -->
-        <div id="welcomeScreen">
-            <h2>Welcome</h2>
-            <div class="welcome-content">
-                <p id="welcomeMessage"></p>
-            </div>
-            <button class="logout-btn" onclick="logout()">Logout</button>
+            <h2>Welcome, <span id="welcomeUsername" style="color: blue;"></span></h2>
+            <button class="logout-btn" id="logoutButton">Logout</button>
         </div>
     </div>
 
     <script>
-        async function login() {
-            const username = document.getElementById('loginUsername').value;
-            const password = document.getElementById('loginPassword').value;
-            const errorElement = document.getElementById('loginError');
+        // Simulated database of users
+        const users = {
+            admin: 'admin',
+            user1: 'password1',
+            user2: 'password2'
+        };
 
-            try {
-                const response = await fetch('users.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ action: 'login', username, password })
-                });
+        // Login functionality
+        document.getElementById('loginButton').addEventListener('click', function() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorMessage = document.getElementById('errorMessage');
 
-                const data = await response.json();
-                if (data.success) {
-                    if (data.isAdmin) {
-                        showAdminPanel();
-                    } else {
-                        showWelcomeScreen(username);
-                    }
-                } else {
-                    errorElement.style.display = 'block';
-                }
-            } catch (error) {
-                errorElement.textContent = 'An error occurred during login';
-                errorElement.style.display = 'block';
+            if (users[username] && users[username] === password) {
+                // Successful login
+                document.getElementById('loginForm').style.display = 'none';
+                document.getElementById('adminPanel').style.display = 'block';
+                document.getElementById('welcomeUsername').innerText = username;
+                errorMessage.innerText = ''; // Clear error message
+            } else {
+                // Show error message
+                errorMessage.innerText = 'Invalid username or password.';
             }
-        }
+        });
 
-        function showAdminPanel() {
-            document.getElementById('loginForm').style.display = 'none';
-            document.getElementById('adminPanel').style.display = 'block';
-            document.getElementById('adminWelcome').innerText = `Welcome, Admin!`;
-        }
-
-        function showWelcomeScreen(username) {
-            document.getElementById('loginForm').style.display = 'none';
-            document.getElementById('welcomeScreen').style.display = 'block';
-            document.getElementById('welcomeMessage').innerText = `Welcome, ${username}!`;
-        }
-
-        function logout() {
-            document.getElementById('loginForm').style.display = 'block';
+        // Logout functionality
+        document.getElementById('logoutButton').addEventListener('click', function() {
             document.getElementById('adminPanel').style.display = 'none';
-            document.getElementById('welcomeScreen').style.display = 'none';
-            document.getElementById('loginUsername').value = '';
-            document.getElementById('loginPassword').value = '';
-            document.getElementById('loginError').style.display = 'none';
-        }
-
-        async function createUser() {
-            const username = document.getElementById('newUsername').value;
-            const password = document.getElementById('newPassword').value;
-            const errorElement = document.getElementById('createError');
-
-            if (!username || !password) {
-                errorElement.textContent = 'Please fill in all fields';
-                errorElement.style.display = 'block';
-                return;
-            }
-
-            try {
-                const response = await fetch('users.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ action: 'createUser', username, password })
-                });
-
-                const data = await response.json();
-                if (data.success) {
-                    document.getElementById('newUsername').value = '';
-                    document.getElementById('newPassword').value = '';
-                    errorElement.style.display = 'none';
-                    alert('User created successfully');
-                } else {
-                    errorElement.textContent = data.message || 'Error creating user';
-                    errorElement.style.display = 'block';
-                }
-            } catch (error) {
-                errorElement.textContent = 'An error occurred while creating user';
-                errorElement.style.display = 'block';
-            }
-        }
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            document.getElementById('errorMessage').innerText = ''; // Clear error message
+        });
     </script>
 </body>
 </html>
