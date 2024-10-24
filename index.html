@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login System</title>
+    <style>
+        @font-face {
+            font-family: 'Product Sans';
+            src: url('https://fonts.gstatic.com/s/productsans/v19/pxiDypQkot1TnFhsFMOfGShVE9eOcEg.woff2') format('woff2');
+        }
+
+        * {
+            font-family: 'Product Sans', Arial, sans-serif;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f2f5;
+            color: #202124;
+        }
+
+        .container {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            width: 320px;
+        }
+
+        h2 {
+            font-weight: 500;
+            color: #202124;
+            margin: 0 0 24px 0;
+            text-align: center;
+            font-size: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 6px 0;
+            border: 1px solid #dadce0;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 16px;
+            transition: all 0.2s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #1a73e8;
+            box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #1a73e8;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            transform: scale(1);
+        }
+
+        button:hover {
+            background-color: #1557b0;
+            transform: scale(1.02);
+            box-shadow: 0 2px 8px rgba(26, 115, 232, 0.3);
+        }
+
+        button:active {
+            transform: scale(0.98);
+            box-shadow: 0 1px 4px rgba(26, 115, 232, 0.2);
+        }
+
+        /* Ripple effect */
+        button::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.3s ease-out, height 0.3s ease-out;
+        }
+
+        button:hover::after {
+            width: 300px;
+            height: 300px;
+        }
+
+        .toggle-form {
+            text-align: center;
+            margin-top: 16px;
+        }
+
+        .toggle-btn {
+            background: none;
+            border: none;
+            color: #1a73e8;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 14px;
+            padding: 8px 16px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .toggle-btn:hover {
+            background-color: rgba(26, 115, 232, 0.08);
+            transform: translateY(-1px);
+        }
+
+        .toggle-btn:active {
+            transform: translateY(0px);
+        }
+
+        #loginForm, #signupForm {
+            display: none;
+        }
+
+        .active {
+            display: block !important;
+        }
+
+        .error {
+            color: #d93025;
+            font-size: 14px;
+            margin-top: 8px;
+            transform: translateY(-4px);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .error:not(:empty) {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        #welcomeScreen {
+            text-align: center;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+        }
+
+        #welcomeScreen.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .welcome-content {
+            margin: 24px 0;
+        }
+
+        #welcomeMessage {
+            font-size: 18px;
+            color: #202124;
+            margin-bottom: 8px;
+        }
+
+        .logout-btn {
+            background-color: #ea4335;
+        }
+
+        .logout-btn:hover {
+            background-color: #d33828;
+        }
+
+        input::placeholder {
+            color: #5f6368;
+        }
+
+        /* Form transition animations */
+        #loginForm, #signupForm {
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        #loginForm.active, #signupForm.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <!-- Rest of the HTML remains the same -->
+    <div class="container">
+        <!-- Login Form -->
+        <div id="loginForm" class="active">
+            <h2>Login</h2>
+            <div class="form-group">
+                <input type="text" id="loginUsername" placeholder="Username">
+            </div>
+            <div class="form-group">
+                <input type="password" id="loginPassword" placeholder="Password">
+            </div>
+            <div class="error" id="loginError"></div>
+            <button onclick="login()">Login</button>
+            <div class="toggle-form">
+                <button class="toggle-btn" onclick="toggleForms()">Need an account? Sign up</button>
+            </div>
+        </div>
+
+        <!-- Signup Form -->
+        <div id="signupForm">
+            <h2>Sign Up</h2>
+            <div class="form-group">
+                <input type="text" id="signupUsername" placeholder="Username">
+            </div>
+            <div class="form-group">
+                <input type="password" id="signupPassword" placeholder="Password">
+            </div>
+            <div class="form-group">
+                <input type="password" id="confirmPassword" placeholder="Confirm Password">
+            </div>
+            <div class="error" id="signupError"></div>
+            <button onclick="signup()">Sign Up</button>
+            <div class="toggle-form">
+                <button class="toggle-btn" onclick="toggleForms()">Already have an account? Login</button>
+            </div>
+        </div>
+
+        <!-- Welcome Screen -->
+        <div id="welcomeScreen" style="display: none;">
+            <h2>Welcome</h2>
+            <div class="welcome-content">
+                <p id="welcomeMessage"></p>
+                <p style="color: #5f6368;">You are now logged in</p>
+            </div>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <script>
+        // Previous JavaScript remains the same, but let's modify the show/hide functions
+        document.addEventListener('DOMContentLoaded', () => {
+            // Create admin account
+            const adminUser = {
+                username: 'admin',
+                password: 'admin'
+            };
+            localStorage.setItem('admin', JSON.stringify(adminUser));
+
+            // Check for logged in user
+            const loggedInUser = localStorage.getItem('currentUser');
+            if (loggedInUser) {
+                showWelcomeScreen(loggedInUser);
+            }
+        });
+
+        function toggleForms() {
+            const loginForm = document.getElementById('loginForm');
+            const signupForm = document.getElementById('signupForm');
+            
+            // Clear error messages
+            document.getElementById('loginError').textContent = '';
+            document.getElementById('signupError').textContent = '';
+
+            // Toggle active classes with animation
+            if (loginForm.classList.contains('active')) {
+                loginForm.classList.remove('active');
+                setTimeout(() => {
+                    loginForm.style.display = 'none';
+                    signupForm.style.display = 'block';
+                    setTimeout(() => signupForm.classList.add('active'), 50);
+                }, 300);
+            } else {
+                signupForm.classList.remove('active');
+                setTimeout(() => {
+                    signupForm.style.display = 'none';
+                    loginForm.style.display = 'block';
+                    setTimeout(() => loginForm.classList.add('active'), 50);
+                }, 300);
+            }
+        }
+
+        function showWelcomeScreen(username) {
+            const loginForm = document.getElementById('loginForm');
+            const signupForm = document.getElementById('signupForm');
+            const welcomeScreen = document.getElementById('welcomeScreen');
+
+            // Hide forms with animation
+            loginForm.classList.remove('active');
+            signupForm.classList.remove('active');
+
+            setTimeout(() => {
+                loginForm.style.display = 'none';
+                signupForm.style.display = 'none';
+                welcomeScreen.style.display = 'block';
+                document.getElementById('welcomeMessage').textContent = `Hello, ${username}!`;
+                
+                // Clear forms
+                document.getElementById('loginUsername').value = '';
+                document.getElementById('loginPassword').value = '';
+                document.getElementById('signupUsername').value = '';
+                document.getElementById('signupPassword').value = '';
+                document.getElementById('confirmPassword').value = '';
+
+                // Add visible class for animation
+                setTimeout(() => welcomeScreen.classList.add('visible'), 50);
+            }, 300);
+        }
+
+        function logout() {
+            const welcomeScreen = document.getElementById('welcomeScreen');
+            welcomeScreen.classList.remove('visible');
+
+            setTimeout(() => {
+                localStorage.removeItem('currentUser');
+                welcomeScreen.style.display = 'none';
+                const loginForm = document.getElementById('loginForm');
+                loginForm.style.display = 'block';
+                setTimeout(() => loginForm.classList.add('active'), 50);
+            }, 300);
+        }
+
+        // Add ripple effect to all buttons
+        document.querySelectorAll('button').forEach(button => {
+            button.addEventListener('click', function(e) {
+                const ripple = document.createElement('div');
+                ripple.classList.add('ripple');
+                this.appendChild(ripple);
+                setTimeout(() => ripple.remove(), 1000);
+            });
+        });
+    </script>
+</body>
+</html>
