@@ -1,5 +1,5 @@
 <?php
-// users.php - Handles user operations
+// users.php
 session_start();
 
 class UserManager {
@@ -80,61 +80,4 @@ class UserManager {
                 $userList[] = $username;
             }
         }
-        return ['success' => true, 'users' => $userList];
-    }
-
-    // Delete user
-    public function deleteUser($username) {
-        if (!isset($_SESSION['user']) || $_SESSION['user'] !== 'admin') {
-            return ['success' => false, 'message' => 'Unauthorized'];
-        }
-
-        $users = $this->getUsers();
-        $updatedUsers = [];
-        foreach ($users as $user) {
-            list($savedUsername) = explode(':', $user);
-            if ($username !== $savedUsername) {
-                $updatedUsers[] = $user;
-            }
-        }
-        $this->saveUsers($updatedUsers);
-        return ['success' => true];
-    }
-
-    // Logout
-    public function logout() {
-        session_destroy();
-        return ['success' => true];
-    }
-}
-
-// Handle AJAX requests
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $userManager = new UserManager();
-    $data = json_decode(file_get_contents('php://input'), true);
-    $action = $data['action'] ?? '';
-    
-    header('Content-Type: application/json');
-    
-    switch ($action) {
-        case 'login':
-            echo json_encode($userManager->login($data['username'], $data['password']));
-            break;
-        case 'createUser':
-            echo json_encode($userManager->createUser($data['username'], $data['password']));
-            break;
-        case 'getUsers':
-            echo json_encode($userManager->getAllUsers());
-            break;
-        case 'deleteUser':
-            echo json_encode($userManager->deleteUser($data['username']));
-            break;
-        case 'logout':
-            echo json_encode($userManager->logout());
-            break;
-        default:
-            echo json_encode(['success' => false, 'message' => 'Invalid action']);
-    }
-    exit;
-}
-?>
+        return ['success' => true, 'users' => $user
