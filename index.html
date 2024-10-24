@@ -285,13 +285,10 @@
                 return;
             }
 
+            // Add new user
             users.push({ username, password });
             localStorage.setItem('users', JSON.stringify(users));
 
-            // Create the format for saving in localStorage as "username:password"
-            const formattedUsers = users.map(u => `${u.username}:${u.password}`).join('\n');
-            localStorage.setItem('formattedUsers', formattedUsers);
-            
             // Clear form and error
             document.getElementById('newUsername').value = '';
             document.getElementById('newPassword').value = '';
@@ -305,7 +302,7 @@
             const userList = document.getElementById('userList');
             const users = JSON.parse(localStorage.getItem('users'));
 
-            let userListHTML = '<h3>Existing Users:</h3>';
+            let userListHTML = '';
             users.forEach(user => {
                 userListHTML += `
                     <div class="user-item">
@@ -353,4 +350,5 @@
     </script>
 </body>
 </html>
+
 
